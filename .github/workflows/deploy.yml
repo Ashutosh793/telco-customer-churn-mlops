@@ -56,8 +56,57 @@ jobs:
             --region $AWS_REGION
 
       - name: Wait for ECS deployment
+        shell: bash
         run: |
-          aws ecs wait services-stable \
-            --cluster $ECS_CLUSTER \
-            --services $ECS_SERVICE \
-            --region $AWS_REGION
+          echo "Waiting for ECS deployment to complete..."
+
+          for i in {1..120}; do
+
+            ROLLOUT_STATE=$(aws ecs describe-services \
+              --cluster "$ECS_CLUSTER" \
+              --services "$ECS_SERVICE" \
+              --region "$AWS_REGION" \
+              --query "services[0].deployments[?status=='PRIMARY'].rolloutState | [0]" \
+              --output text)
+
+            RUNNING_COUNT=$(aws ecs describe-services \
+              --cluster "$ECS_CLUSTER" \
+              --services "$ECS_SERVICE" \
+              --region "$AWS_REGION" \
+              --query "services[0].runningCount" \
+              --output text)
+
+            DESIRED_COUNT=$(aws ecs describe-services \
+              --cluster "$ECS_CLUSTER" \
+              --services "$ECS_SERVICE" \
+              --region "$AWS_REGION" \
+              --query "services[0].desiredCount" \
+              --output text)
+
+            PENDING_COUNT=$(aws ecs describe-services \
+              --cluster "$ECS_CLUSTER" \
+              --services "$ECS_SERVICE" \
+              --region "$AWS_REGION" \
+              --query "services[0].pendingCount" \
+              --output text)
+
+            echo "Rollout: $ROLLOUT_STATE | Running: $RUNNING_COUNT/$DESIRED_COUNT | Pending: $PENDING_COUNT"
+
+            if [[ "$ROLLOUT_STATE" == "COMPLETED" ]] \
+              && [[ "$RUNNING_COUNT" == "$DESIRED_COUNT" ]] \
+              && [[ "$PENDING_COUNT" == "0" ]]; then
+
+              echo "ECS deployment completed successfully."
+              exit 0
+            fi
+
+            if [[ "$ROLLOUT_STATE" == "FAILED" ]]; then
+              echo "ECS deployment failed."
+              exit 1
+            fi
+
+            sleep 15
+          done
+
+          echo "Timed out waiting for ECS deployment."
+          exit 1
