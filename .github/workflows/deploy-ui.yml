@@ -19,6 +19,7 @@ env:
   ECR_REPOSITORY: telco-churn-ui
   ECS_CLUSTER: telco-churn-cluster
   ECS_SERVICE: telco-churn-ui-service
+  UI_URL: http://telco-churn-ui-alb-1250685601.us-east-1.elb.amazonaws.com
 
 jobs:
   deploy-ui:
@@ -117,4 +118,32 @@ jobs:
           done
 
           echo "Timed out waiting for UI ECS deployment."
+          exit 1
+
+      - name: Smoke test deployed UI
+        shell: bash
+        run: |
+          echo "Running UI smoke test..."
+
+          for i in {1..12}; do
+
+            HTTP_CODE=$(curl \
+              --silent \
+              --output /dev/null \
+              --write-out "%{http_code}" \
+              --max-time 10 \
+              "$UI_URL" || true)
+
+            echo "Attempt $i: HTTP $HTTP_CODE"
+
+            if [[ "$HTTP_CODE" == "200" ]]; then
+              echo "UI smoke test passed."
+              exit 0
+            fi
+
+            echo "UI not ready yet. Retrying in 10 seconds..."
+            sleep 10
+          done
+
+          echo "UI smoke test failed."
           exit 1
