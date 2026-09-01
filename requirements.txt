@@ -6,3 +6,4 @@ scikit-learn
 xgboost
 mlflow
 skops
+shap==0.51.0
