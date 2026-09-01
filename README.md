@@ -96,6 +96,16 @@ Cross-validation produced approximately:
 
 After hyperparameter tuning, XGBoost achieved a CV ROC-AUC of approximately **0.8510**.
 
+### Experiment Tracking with MLflow
+
+MLflow was used to track model parameters, evaluation metrics, and model artifacts during training.
+
+
+<img width="1337" height="921" alt="image" src="https://github.com/user-attachments/assets/addddfc9-9dc0-454c-a342-218b3b74d48a" />
+
+
+
+
 ---
 
 ## Final XGBoost Model
