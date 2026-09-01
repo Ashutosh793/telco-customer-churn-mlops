@@ -1,0 +1,120 @@
+name: Deploy Telco Churn UI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/ui/**"
+      - "Dockerfile.ui"
+      - "requirements.txt"
+      - ".github/workflows/deploy-ui.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: telco-churn-ui
+  ECS_CLUSTER: telco-churn-cluster
+  ECS_SERVICE: telco-churn-ui-service
+
+jobs:
+  deploy-ui:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::323965931440:role/GitHubActionsTelcoChurnRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push UI Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            -f Dockerfile.ui \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            .
+
+          docker tag \
+            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Deploy UI to ECS
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --force-new-deployment \
+            --region $AWS_REGION
+
+      - name: Wait for UI deployment
+        shell: bash
+        run: |
+          echo "Waiting for UI ECS deployment..."
+
+          for i in {1..120}; do
+
+            ROLLOUT_STATE=$(aws ecs describe-services \
+              --cluster "$ECS_CLUSTER" \
+              --services "$ECS_SERVICE" \
+              --region "$AWS_REGION" \
+              --query "services[0].deployments[?status=='PRIMARY'].rolloutState | [0]" \
+              --output text)
+
+            RUNNING_COUNT=$(aws ecs describe-services \
+              --cluster "$ECS_CLUSTER" \
+              --services "$ECS_SERVICE" \
+              --region "$AWS_REGION" \
+              --query "services[0].runningCount" \
+              --output text)
+
+            DESIRED_COUNT=$(aws ecs describe-services \
+              --cluster "$ECS_CLUSTER" \
+              --services "$ECS_SERVICE" \
+              --region "$AWS_REGION" \
+              --query "services[0].desiredCount" \
+              --output text)
+
+            PENDING_COUNT=$(aws ecs describe-services \
+              --cluster "$ECS_CLUSTER" \
+              --services "$ECS_SERVICE" \
+              --region "$AWS_REGION" \
+              --query "services[0].pendingCount" \
+              --output text)
+
+            echo "Rollout: $ROLLOUT_STATE | Running: $RUNNING_COUNT/$DESIRED_COUNT | Pending: $PENDING_COUNT"
+
+            if [[ "$ROLLOUT_STATE" == "COMPLETED" ]] \
+              && [[ "$RUNNING_COUNT" == "$DESIRED_COUNT" ]] \
+              && [[ "$PENDING_COUNT" == "0" ]]; then
+
+              echo "UI deployment completed successfully."
+              exit 0
+            fi
+
+            if [[ "$ROLLOUT_STATE" == "FAILED" ]]; then
+              echo "UI deployment failed."
+              exit 1
+            fi
+
+            sleep 15
+          done
+
+          echo "Timed out waiting for UI ECS deployment."
+          exit 1
