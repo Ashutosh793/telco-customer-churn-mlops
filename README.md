@@ -2,9 +2,6 @@
 
 An end-to-end machine learning system for predicting telecom customer churn, exposing predictions through a FastAPI backend and an interactive Gradio frontend, with Dockerized deployment on AWS ECS Fargate, automated CI/CD using GitHub Actions, model explainability with SHAP, experiment tracking with MLflow, monitoring with CloudWatch, and ECS service auto scaling.
 
-
-<img width="1436" height="942" alt="image" src="https://github.com/user-attachments/assets/f2d1d64c-58c9-48f9-b773-42223de9b21b" />
-
 ---
 
 ## Live Application
@@ -19,6 +16,20 @@ The application allows users to enter customer information and receive:
 - Stay probability
 - Low / Medium / High risk classification
 - SHAP-based explanation of the most influential features
+
+### Application Demo
+
+<img width="1436" height="942" alt="app-demo" src="https://github.com/user-attachments/assets/308572e6-285a-4938-9c68-40644e504faa" />
+
+
+---
+
+## System Architecture
+
+The application separates the frontend, inference API, model serving, CI/CD, and monitoring layers. The Gradio UI and FastAPI backend run as separate AWS ECS Fargate services behind Application Load Balancers, while GitHub Actions builds and deploys container images through Amazon ECR.
+
+<img width="1536" height="1024" alt="Customer Churn Architecture Diagram" src="https://github.com/user-attachments/assets/e85c2256-84ef-43f3-9d8d-1c1f1a4cc854" />
+
 
 ---
 
@@ -96,16 +107,6 @@ Cross-validation produced approximately:
 
 After hyperparameter tuning, XGBoost achieved a CV ROC-AUC of approximately **0.8510**.
 
-### Experiment Tracking with MLflow
-
-MLflow was used to track model parameters, evaluation metrics, and model artifacts during training.
-
-
-<img width="1337" height="921" alt="image" src="https://github.com/user-attachments/assets/addddfc9-9dc0-454c-a342-218b3b74d48a" />
-
-
-
-
 ---
 
 ## Final XGBoost Model
@@ -126,6 +127,14 @@ XGBClassifier(
 ```
 
 The training code logs model parameters, evaluation metrics, and the complete Scikit-learn pipeline using MLflow.
+
+### MLflow Experiment Tracking
+
+MLflow tracks the final XGBoost model's hyperparameters, evaluation metrics, decision threshold, and model artifact.
+
+<img width="1337" height="921" alt="Customer Churn MLFlow" src="https://github.com/user-attachments/assets/6565c066-4fcd-4dc8-b66b-ece69ca380a7" />
+
+
 
 ---
 
@@ -199,14 +208,14 @@ POST /predict
 GET /docs
 ```
 
-### Deployed FastAPI Prediction Endpoint
-
-The FastAPI service exposes a `/predict` endpoint that returns the churn probability, threshold-based prediction, and SHAP feature explanations.
-
-<img width="1546" height="757" alt="image" src="https://github.com/user-attachments/assets/9b81f2a5-7fb5-4368-a895-3fb1dd12a23f" />
-
-
 The prediction endpoint accepts raw customer information, applies the same preprocessing pipeline used during training, generates the XGBoost churn probability, applies the `0.35` threshold, calculates SHAP values, and returns the prediction plus explanations.
+
+### Deployed Prediction Endpoint
+
+The deployed `/predict` endpoint returns the churn probability, threshold-based prediction, and SHAP feature explanations.
+
+<img width="1546" height="757" alt="Customer Churn FASTApi" src="https://github.com/user-attachments/assets/882b9c5b-c512-4c7f-9201-c0aacfa53dda" />
+
 
 ---
 
@@ -221,58 +230,6 @@ The UI displays:
 - Churn Probability
 - Stay Probability
 - SHAP Explanation
-
----
-
-## System Architecture
-
-```text
-                         User
-                          |
-                          v
-                UI Application Load Balancer
-                          |
-                          v
-                  Gradio Frontend
-                   AWS ECS Fargate
-                          |
-                          v
-                API Application Load Balancer
-                          |
-                          v
-                     FastAPI API
-                   AWS ECS Fargate
-                          |
-                          v
-                Preprocessing Pipeline
-                          |
-                          v
-                       XGBoost
-                          |
-                          v
-                         SHAP
-```
-
-### CI/CD Architecture
-
-```text
-GitHub
-   |
-   v
-GitHub Actions
-   |
-   v
-Docker Build
-   |
-   v
-Amazon ECR
-   |
-   v
-AWS ECS Fargate
-   |
-   v
-Application Load Balancer
-```
 
 ---
 
