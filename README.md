@@ -199,6 +199,13 @@ POST /predict
 GET /docs
 ```
 
+### Deployed FastAPI Prediction Endpoint
+
+The FastAPI service exposes a `/predict` endpoint that returns the churn probability, threshold-based prediction, and SHAP feature explanations.
+
+<img width="1546" height="757" alt="image" src="https://github.com/user-attachments/assets/9b81f2a5-7fb5-4368-a895-3fb1dd12a23f" />
+
+
 The prediction endpoint accepts raw customer information, applies the same preprocessing pipeline used during training, generates the XGBoost churn probability, applies the `0.35` threshold, calculates SHAP values, and returns the prediction plus explanations.
 
 ---
