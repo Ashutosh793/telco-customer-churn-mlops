@@ -72,8 +72,10 @@ class CustomerData(BaseModel):
 def health_check():
     return {
         "status": "healthy",
+        "service": "telco-churn-api",
         "model": "XGBoost",
-        "threshold": THRESHOLD
+        "threshold": THRESHOLD,
+        "version": "1.1.0"
     }
 
 
