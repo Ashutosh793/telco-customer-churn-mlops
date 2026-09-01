@@ -1,6 +1,8 @@
 # Telco Customer Churn – End-to-End ML & MLOps System
 
 An end-to-end machine learning system for predicting telecom customer churn, exposing predictions through a FastAPI backend and an interactive Gradio frontend, with Dockerized deployment on AWS ECS Fargate, automated CI/CD using GitHub Actions, model explainability with SHAP, experiment tracking with MLflow, monitoring with CloudWatch, and ECS service auto scaling.
+
+
 <img width="1436" height="942" alt="image" src="https://github.com/user-attachments/assets/f2d1d64c-58c9-48f9-b773-42223de9b21b" />
 
 ---
