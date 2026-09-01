@@ -1,12 +1,15 @@
 import gradio as gr
 import requests
-
+import os
 
 # --------------------------------------------------
 # API Configuration
 # --------------------------------------------------
 
-API_URL = "http://telco-churn-alb-1746633897.us-east-1.elb.amazonaws.com/predict"
+API_URL = os.getenv(
+    "API_URL",
+    "http://telco-churn-alb-1746633897.us-east-1.elb.amazonaws.com/predict"
+)
 
 
 # --------------------------------------------------
@@ -459,4 +462,7 @@ with gr.Blocks(
 # --------------------------------------------------
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=7860
+    )
