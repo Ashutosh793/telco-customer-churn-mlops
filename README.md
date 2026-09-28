@@ -7,7 +7,7 @@ An end-to-end machine learning system for predicting telecom customer churn, exp
 ## Live Application
 
 **Frontend:**  
-http://telco-churn-ui-alb-1250685601.us-east-1.elb.amazonaws.com
+https://telco-customer-churn-mlops-ggi9bq5ieg3jfngnzmadjm.streamlit.app/
 
 The application allows users to enter customer information and receive:
 
